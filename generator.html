@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title>ACCWY 图片名单生成器 (超级防呆版)</title>
+    <style>
+        body { background: #1a1a1a; color: #fff; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; text-align: center; }
+        h1 { color: #b8956a; font-size: 28px; margin-bottom: 10px; }
+        p { color: #aaa; margin-bottom: 30px; }
+        .box { 
+            border: 3px dashed #b8956a; 
+            padding: 60px 20px; 
+            border-radius: 10px; 
+            cursor: pointer; 
+            background: #222; 
+            transition: 0.3s; 
+            max-width: 600px; 
+            margin: 0 auto;
+        }
+        .box:hover { background: #2a2a2a; border-color: #d4b896; }
+        .box.dragover { background: #333; border-color: #fff; }
+        .btn {
+            display: none;
+            background: #b8956a;
+            color: #111;
+            font-size: 18px;
+            font-weight: bold;
+            padding: 15px 40px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 30px;
+            transition: 0.3s;
+        }
+        .btn:hover { background: #d4b896; }
+        #status { color: #4CAF50; font-size: 16px; margin-top: 20px; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+    <h1>ACCWY 图片名单生成器</h1>
+    <p>请选择或直接拖拽你的整个 <b>images</b> 文件夹到这里</p>
+
+    <!-- 支持点击的选框 -->
+    <div class="box" id="drop-zone" onclick="document.getElementById('file-input').click()">
+        <h2 style="color: #fff; margin: 0 0 10px 0;">📂 点击选择 images 文件夹</h2>
+        <p style="margin: 0; font-size: 14px; color: #888;">或者直接把文件夹拖进来</p>
+        <input type="file" id="file-input" webkitdirectory directory multiple style="display: none;">
+    </div>
+
+    <div id="status"></div>
+    
+    <!-- 手动下载按钮 -->
+    <button id="download-btn" class="btn" onclick="downloadList()">⬇️ 下载 image-list.js</button>
+
+    <script>
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const statusText = document.getElementById('status');
+        const downloadBtn = document.getElementById('download-btn');
+        let generatedBlobUrl = null;
+        let finalList = [];
+
+        // 允许的图片后缀
+        const validExtensions = ['.jpg', '.jpeg', '.png', '.webp', '.jfif', '.gif'];
+
+        // 处理文件
+        function handleFiles(files) {
+            if (files.length === 0) {
+                statusText.style.color = '#f44336';
+                statusText.innerText = '没有选择任何文件！';
+                return;
+            }
+
+            statusText.style.color = '#aaa';
+            statusText.innerText = '⏳ 正在扫描图片，请稍候...';
+            
+            let list = [];
+            let ignoredCount = 0;
+
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const name = file.name;
+                const ext = name.substring(name.lastIndexOf('.')).toLowerCase();
+                
+                // 过滤掉非图片文件和隐藏文件
+                if (name.startsWith('.') || !validExtensions.includes(ext)) {
+                    ignoredCount++;
+                    continue;
+                }
+
+                // 只保留文件名（不包含路径）
+                list.push(name);
+            }
+
+            // 按照字母排序，方便查看
+            list.sort();
+            finalList = list;
+
+            // 生成 JS 内容
+            const jsContent = "window.IMAGE_LIST = " + JSON.stringify(list, null, 4) + ";";
+            
+            // 释放旧的 URL
+            if (generatedBlobUrl) URL.revokeObjectURL(generatedBlobUrl);
+            
+            const blob = new Blob([jsContent], { type: 'text/javascript;charset=utf-8' });
+            generatedBlobUrl = URL.createObjectURL(blob);
+
+            // 显示结果
+            statusText.style.color = '#4CAF50';
+            statusText.innerHTML = `✅ 扫描完成！成功提取了 <b>${list.length}</b> 张图片。<br><span style="font-size:12px;color:#888;">(已自动忽略 ${ignoredCount} 个非图片文件)</span>`;
+            
+            // 显示下载按钮
+            downloadBtn.style.display = 'inline-block';
+            downloadBtn.innerText = `⬇️ 下载最新的 image-list.js (${list.length}张图)`;
+        }
+
+        // 手动点击下载
+        function downloadList() {
+            if (!generatedBlobUrl || finalList.length === 0) return;
+            const a = document.createElement('a');
+            a.href = generatedBlobUrl;
+            a.download = 'image-list.js';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // 点击选框
+        fileInput.addEventListener('change', (e) => {
+            handleFiles(e.target.files);
+        });
+
+        // 拖拽效果
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+        });
+        
+        // 拖拽释放
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            
+            // 获取拖拽进去的文件
+            const items = e.dataTransfer.items;
+            if (!items) {
+                handleFiles(e.dataTransfer.files);
+                return;
+            }
+
+            // 递归获取文件夹下的所有文件
+            const files = [];
+            const readEntries = (item) => {
+                return new Promise((resolve) => {
+                    if (item.isFile) {
+                        item.file((file) => {
+                            files.push(file);
+                            resolve();
+                        });
+                    } else if (item.isDirectory) {
+                        const dirReader = item.createReader();
+                        dirReader.readEntries(async (entries) => {
+                            for (let i = 0; i < entries.length; i++) {
+                                await readEntries(entries[i]);
+                            }
+                            resolve();
+                        });
+                    }
+                });
+            };
+
+            const promises = [];
+            for (let i = 0; i < items.length; i++) {
+                promises.push(readEntries(items[i].webkitGetAsEntry ? items[i].webkitGetAsEntry() : items[i]));
+            }
+
+            Promise.all(promises).then(() => {
+                handleFiles(files);
+            });
+        });
+    </script>
+</body>
+</html>
