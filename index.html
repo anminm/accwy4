@@ -402,9 +402,10 @@
     <script src="js/image-list.js"></script>
     <script src="js/main.js"></script>
 
-    <!-- 谷歌翻译隐藏引擎 -->
+<!-- 谷歌翻译隐藏引擎 -->
     <div id="google_translate_element" style="display:none;"></div>
     <script type="text/javascript">
+        // 1. 初始化函数
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'en', 
@@ -414,15 +415,44 @@
             }, 'google_translate_element');
         }
 
-        function translateLanguage(lang) {
-            var selectField = document.querySelector("#google_translate_element select");
-            if(selectField) {
-                selectField.value = lang;
-                selectField.dispatchEvent(new Event('change'));
-            }
+        // 2. 动态加载谷歌脚本（只有需要时才加载，不卡网页）
+        function loadGoogleTranslate() {
+            if (document.getElementById('google-translate-script')) return;
+            var script = document.createElement('script');
+            script.id = 'google-translate-script';
+            script.type = 'text/javascript';
+            script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+            document.body.appendChild(script);
         }
+
+        // 3. 用户切换语言
+        function translateLanguage(lang) {
+            if (lang === 'en') {
+                document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+                document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=." + location.hostname;
+            } else {
+                document.cookie = "googtrans=/en/" + lang + "; path=/;";
+                document.cookie = "googtrans=/en/" + lang + "; path=/; domain=." + location.hostname;
+            }
+            window.location.reload(); // 刷新页面应用语言
+        }
+
+        // 4. 页面加载逻辑
+        window.addEventListener('DOMContentLoaded', function() {
+            // 同步下拉框显示
+            var cookieVal = document.cookie.match(/googtrans=\/en\/([a-z]+)/);
+            var currentLang = cookieVal ? cookieVal[1] : 'en';
+            var select = document.getElementById('languageSelect');
+            if (select) select.value = currentLang;
+
+            // 【核心】如果当前是外语状态，等页面完全加载完（load事件）后，再去拉取谷歌翻译脚本
+            if (currentLang !== 'en') {
+                window.addEventListener('load', function() {
+                    loadGoogleTranslate();
+                });
+            }
+        });
     </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     
     <style>
         /* 隐藏谷歌翻译自带的丑陋顶部横幅 */
