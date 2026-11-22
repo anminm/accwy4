@@ -179,9 +179,17 @@
                 <a href="#contact" class="nav-link">Contact</a>
             </nav>
 
-            <!-- 右侧 按钮 -->
-            <div class="header-actions">
+            <!-- 右侧 按钮与语言切换 -->
+            <div class="header-actions" style="display: flex; align-items: center; gap: 15px;">
                 <a href="#contact" class="btn btn-outline btn-sm">Get a Quote</a>
+                
+                <!-- 谷歌多语言下拉菜单 -->
+                <select id="languageSelect" onchange="translateLanguage(this.value)" style="background: transparent; color: #fff; border: 1px solid #444; padding: 5px; border-radius: 4px; cursor: pointer; outline: none;">
+                    <option value="en" style="color:#000;">English</option>
+                    <option value="ru" style="color:#000;">Русский (RU)</option>
+                    <option value="fr" style="color:#000;">Français (FR)</option>
+                    <option value="es" style="color:#000;">Español (ES)</option>
+                </select>
             </div>
 
             <!-- 汉堡菜单按钮（手机上显示） -->
@@ -264,7 +272,7 @@
         </div>
     </section>
 
-            <!-- ========== 我们的服务 ========== -->
+    <!-- ========== 我们的服务 ========== -->
     <section class="section section-dark">
         <div class="container">
             <div class="oem-grid">
@@ -281,7 +289,7 @@
                     </ul>
                     <a href="about.html" class="btn btn-outline">Learn More</a>
                 </div>
-                <div class="work-space.png">
+                <div class="oem-image">
                     <!-- 把这里的图换成你仓库或者打包的真实照片 -->
                     <img src="images/work-space.png" alt="Our Warehouse" style="width:100%;height:100%;object-fit:cover;border-radius:8px;">
                 </div>
@@ -393,5 +401,37 @@
     <script src="js/data.js"></script>
     <script src="js/image-list.js"></script>
     <script src="js/main.js"></script>
+
+    <!-- 谷歌翻译隐藏引擎 -->
+    <div id="google_translate_element" style="display:none;"></div>
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en', 
+                includedLanguages: 'en,ru,fr,es', 
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+
+        function translateLanguage(lang) {
+            var selectField = document.querySelector("#google_translate_element select");
+            if(selectField) {
+                selectField.value = lang;
+                selectField.dispatchEvent(new Event('change'));
+            }
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    
+    <style>
+        /* 隐藏谷歌翻译自带的丑陋顶部横幅 */
+        body { top: 0 !important; }
+        .goog-te-banner-frame { display: none !important; }
+        #goog-gt-tt { display: none !important; }
+        .goog-tooltip { display: none !important; }
+        .goog-tooltip:hover { display: none !important; }
+        .goog-text-highlight { background-color: transparent !important; border: none !important; box-shadow: none !important; }
+    </style>
 </body>
 </html>
